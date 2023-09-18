@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  ocpp
+
+  Sample SAM Template for ocpp
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    Tracing: Active
+  Api:
+    TracingEnabled: true
+
+Resources:
+  OcppLambdaFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: lambda/
+      Handler: app.handler
+      Runtime: nodejs16.x
+      Architectures:
+      - x86_64
+      Events:
+        OcppLambda:
+          Type: Api 
+          Properties:
+            Path: /lambda
+            Method: get
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Join:
+        - ''
+        - - ApplicationInsights-SAM-
+          - Ref: AWS::StackName
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Fn::Join:
+        - ''
+        - - ApplicationInsights-SAM-
+          - Ref: AWS::StackName
+      AutoConfigurationEnabled: 'true'
+    DependsOn: ApplicationResourceGroup
+Outputs:
+  OcppLambdaApi:
+    Description: API Gateway endpoint URL for Prod stage for Ocpp Lambda function
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/lambda/"
+  OcppLambdaFunction:
+    Description: Ocpp Lambda Lambda Function ARN
+    Value: !GetAtt OcppLambdaFunction.Arn
+  OcppLambdaFunctionIamRole:
+    Description: Implicit IAM Role created for Ocpp Lambda function
+    Value: !GetAtt OcppLambdaFunctionRole.Arn
